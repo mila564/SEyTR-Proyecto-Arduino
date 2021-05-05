@@ -103,8 +103,15 @@ void setup() {
 }
 
 void loop() {
-  
+  setBoats(board, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH, VERTICAL, -1, 1, -1, 1);
+  setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH, HORIZONTAL, -1, 3, -1, 1);
   showBoard(board);
   delay(1000);
   showBoard(board2);
 }
+
+/*[0] [0] [0] [0] [0]
+[0] [0] [0] [0] [0]
+[0] [1] [1] [1] [0]
+[0] [0] [0] [0] [0]
+[0] [0] [0] [0] [0]*/
