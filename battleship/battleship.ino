@@ -24,50 +24,25 @@
 #define BOARD_SIZE 10
 
 #define NUM_PATROL_BOATS 4
-#define NUM_SUBMARINE 3
+#define NUM_CRUISE 3
 #define NUM_DESTROYER 2
 #define NUM_BATTLESHIP 1
-/*
-typedef struct {
-  int x;
-  int y;
-} TCoordinate;
 
-typedef struct {
-  int[BOARD_SIZE][BOARD_SIZE] board;
-} TBoard;
+#define PATROL_BOAT_LENGTH 1
+#define CRUISE_LENGTH 2
+#define DESTROYER_LENGTH 3
+#define BATTLESHIP_LENGTH 4
 
-typedef struct {
-  TCoordinate square[4]
-} TBattleship;
-typedef struct {
-  TCoordinate square[3];
-} TDestroyer;
-typedef struct {
-  TCoordinate square[2];
-} TSubmarine;
-typedef struct {
-  TCoordinate square;
-} TPatrolBoat;
+#define HORIZONTAL 1
+#define VERTICAL 0
 
-typedef struct {
-  TBattleship battleship;
-  TDestroyer destroyer[2];
-  TSubmarine submarine[3];
-  TPatrolBoat patrolBoat[4];
-} TBoatList;
+int board [BOARD_SIZE][BOARD_SIZE];
+int board2 [BOARD_SIZE][BOARD_SIZE];
 
-typedef struct {
-  int boatsAfloat;
-  TBoard board;
-  TBoatList boatList;
-} TPlayer;
 
-TPlayer player[2];
-*/
-void setPatrolBoats(int board[BOARD_SIZE][BOARD_SIZE]){
-    // colocar lanchas
-  for (int i = 0; i < NUM_PATROL_BOATS; i++) {
+void setBoats(int board[BOARD_SIZE][BOARD_SIZE], int numBoats, int boatLength, int orientation, int xLowerIncrement, int xUpperIncrement, int yLowerIncrement, int yUpperIncrement){
+  //colocar barcos
+  for (int i = 0; i < numBoats; i++) {
     int x, y;
     boolean isWaterAround = true;
     do {
@@ -75,9 +50,9 @@ void setPatrolBoats(int board[BOARD_SIZE][BOARD_SIZE]){
       y = random(0, BOARD_SIZE);
       // comprobar que todo lo que rodea a (x,y)
       // es agua, incluyendo la casilla (x,y).
-      for (int xAux = x - 1; xAux <= x + 1; xAux++) {
+      for (int xAux = x + xLowerIncrement; xAux <= x + xUpperIncrement; xAux++) {
         if (xAux < 0 || xAux >= BOARD_SIZE) continue;
-        for (int yAux = y - 1; yAux <= y + 1; yAux++) {
+        for (int yAux = y + yLowerIncrement; yAux <= y + yUpperIncrement; yAux++) {
           if (yAux < 0 || yAux >= BOARD_SIZE) continue;
           isWaterAround = board[xAux][yAux] == WATER;
           if (!isWaterAround) break;
@@ -86,7 +61,18 @@ void setPatrolBoats(int board[BOARD_SIZE][BOARD_SIZE]){
       }
       Serial.println(isWaterAround);
     } while (!isWaterAround);
-    board[x][y] = BOAT;
+    //colocacion del barco
+    //horizontal
+    if(orientation == HORIZONTAL){
+      for(int i = x; i < x + boatLength; i++){
+        board[i][y] = BOAT;
+      }
+    }//vertical
+    else{
+      for(int i = y; i > y - boatLength; i--){
+        board[x][i] = BOAT;
+      }
+    }
     // debug
     Serial.print(x);
     Serial.print(y);
@@ -95,9 +81,16 @@ void setPatrolBoats(int board[BOARD_SIZE][BOARD_SIZE]){
   }
 }
 
+void showBoard(int board [BOARD_SIZE][BOARD_SIZE]){
+  for (int i = 0; i < BOARD_SIZE; i++) {
+    for (int j = 0; j < BOARD_SIZE; j++) {
+      Serial.print( board[i][j] + " ");
+    }
+    Serial.println();
+  }
+}
+
 void setup() {
-  int board[BOARD_SIZE][BOARD_SIZE];
-  int board2[BOARD_SIZE][BOARD_SIZE];
   Serial.begin(9600);
   randomSeed(analogRead(A0));
   // iniciar todas las casillas a agua
@@ -107,21 +100,11 @@ void setup() {
       board2[i][j] = WATER;
     }
   }
-  setPatrolBoats(board);
-  setPatrolBoats(board2);
-/*
-  board[2][3] = WATER;
-  board[2][4] = WATER;
-  board[2][5] = WATER;
-  board[3][3] = WATER;
-  board[3][4] = WATER;
-  board[3][5] = WATER;
-  board[4][3] = WATER;
-  board[4][4] = WATER;
-  board[4][5] = WATER;
-*/
 }
 
 void loop() {
   
+  showBoard(board);
+  delay(1000);
+  showBoard(board2);
 }
