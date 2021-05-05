@@ -33,33 +33,48 @@
 #define DESTROYER_LENGTH 3
 #define BATTLESHIP_LENGTH 4
 
-#define HORIZONTAL 1
-#define VERTICAL 0
+#define HORIZONTAL 0
+#define VERTICAL 1
 
 int board [BOARD_SIZE][BOARD_SIZE];
 int board2 [BOARD_SIZE][BOARD_SIZE];
 
+boolean checkValidCoordinate(
+  int board[BOARD_SIZE][BOARD_SIZE],
+  int x, int y, int xLowerIncrement,
+  int xUpperIncrement, int yLowerIncrement,
+  int yUpperIncrement) {
+  boolean isWaterAround = true;
+  for (int xAux = x + xLowerIncrement; xAux <= x + xUpperIncrement; xAux++) {
+    if (xAux < 0 || xAux >= BOARD_SIZE) continue;
+    for (int yAux = y + yLowerIncrement; yAux <= y + yUpperIncrement; yAux++) {
+      if (yAux < 0 || yAux >= BOARD_SIZE) continue;
+      isWaterAround = board[xAux][yAux] == WATER;
+      if (!isWaterAround) break;
+    }
+    if (!isWaterAround) break;
+  }
+  return isWaterAround;
+}
 
 void setBoats(int board[BOARD_SIZE][BOARD_SIZE], int numBoats, int boatLength, int orientation, int xLowerIncrement, int xUpperIncrement, int yLowerIncrement, int yUpperIncrement){
   //colocar barcos
   for (int i = 0; i < numBoats; i++) {
-    int x, y;
+    int x, y, maxValidX, maxValidY;
+    if (orientation == HORIZONTAL) {
+      maxValidX = BOARD_SIZE - boatLength + 1;
+      maxValidY = BOARD_SIZE;
+    } else {
+      maxValidX = BOARD_SIZE;
+      maxValidY = BOARD_SIZE - boatLength + 1;
+    }
     boolean isWaterAround = true;
     do {
-      x = random(0, BOARD_SIZE);
-      y = random(0, BOARD_SIZE);
+      x = random(0, maxValidX);
+      y = random(0, maxValidY);
       // comprobar que todo lo que rodea a (x,y)
       // es agua, incluyendo la casilla (x,y).
-      for (int xAux = x + xLowerIncrement; xAux <= x + xUpperIncrement; xAux++) {
-        if (xAux < 0 || xAux >= BOARD_SIZE) continue;
-        for (int yAux = y + yLowerIncrement; yAux <= y + yUpperIncrement; yAux++) {
-          if (yAux < 0 || yAux >= BOARD_SIZE) continue;
-          isWaterAround = board[xAux][yAux] == WATER;
-          if (!isWaterAround) break;
-        }
-        if (!isWaterAround) break;
-      }
-      Serial.println(isWaterAround);
+      isWaterAround = checkValidCoordinate(board, x, y, xLowerIncrement, xUpperIncrement, yLowerIncrement, yUpperIncrement);
     } while (!isWaterAround);
     //colocacion del barco
     //horizontal
@@ -73,18 +88,14 @@ void setBoats(int board[BOARD_SIZE][BOARD_SIZE], int numBoats, int boatLength, i
         board[x][i] = BOAT;
       }
     }
-    // debug
-    Serial.print(x);
-    Serial.print(y);
-    Serial.print(board[x][y]);
-    Serial.println();
   }
 }
 
 void showBoard(int board [BOARD_SIZE][BOARD_SIZE]){
   for (int i = 0; i < BOARD_SIZE; i++) {
     for (int j = 0; j < BOARD_SIZE; j++) {
-      Serial.print( board[i][j] + " ");
+      Serial.print(board[i][j]);
+      Serial.print(" ");
     }
     Serial.println();
   }
@@ -93,6 +104,9 @@ void showBoard(int board [BOARD_SIZE][BOARD_SIZE]){
 void setup() {
   Serial.begin(9600);
   randomSeed(analogRead(A0));
+}
+
+void loop() {
   // iniciar todas las casillas a agua
   for (int i = 0; i < BOARD_SIZE; i++) {
     for (int j = 0; j < BOARD_SIZE; j++) {
@@ -100,18 +114,27 @@ void setup() {
       board2[i][j] = WATER;
     }
   }
-}
-
-void loop() {
   setBoats(board, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH, VERTICAL, -1, 1, -1, 1);
   setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH, HORIZONTAL, -1, 3, -1, 1);
   showBoard(board);
-  delay(1000);
+  Serial.println();
   showBoard(board2);
+  Serial.println("-------------------");
+  delay(5000);
 }
 
-/*[0] [0] [0] [0] [0]
-[0] [0] [0] [0] [0]
-[0] [1] [1] [1] [0]
-[0] [0] [0] [0] [0]
-[0] [0] [0] [0] [0]*/
+/*
+ 0   1   2   3   4   5   6   7   8   9
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 0
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 1
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 2
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 3
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 4
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 5
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 6
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 7
+[0] [0] [0] [0] [0] [1] [0] [0] [0] [0] 8
+[0] [0] [0] [0] [0] [1] [0] [0] [0] [0] 9
+
+boardsize=10  validY = BOARD_SIZE - BOAT_LENGTH
+*/
