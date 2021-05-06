@@ -55,20 +55,26 @@ boolean checkValidCoordinate(
   return isWaterAround;
 }
 
-void setBoats(int board[BOARD_SIZE][BOARD_SIZE], int numBoats, int boatLength, int orientation,
-  int rowLowerIncrement, int rowUpperIncrement, int columnLowerIncrement, int columnUpperIncrement){
+void setBoats(int board[BOARD_SIZE][BOARD_SIZE], int numBoats, int boatLength){
   //colocar barcos
   for (int i = 0; i < numBoats; i++) {
-    int row, column, maxValidRow, maxValidColumn;
-    if (orientation == HORIZONTAL) {
-      maxValidRow = BOARD_SIZE;
-      maxValidColumn = BOARD_SIZE - boatLength + 1;
-    } else {
-      maxValidRow = BOARD_SIZE - boatLength + 1;
-      maxValidColumn = BOARD_SIZE;
-    }
+    int row, column, maxValidRow, maxValidColumn, orientation, rowUpperIncrement, columnUpperIncrement;
+    int rowLowerIncrement = -1;
+    int columnLowerIncrement = -1;
     boolean isWaterAround = true;
     do {
+      orientation = random(0,2);
+      if (orientation == HORIZONTAL) {
+        maxValidRow = BOARD_SIZE;
+        maxValidColumn = BOARD_SIZE - boatLength + 1;
+        rowUpperIncrement = 1;
+        columnUpperIncrement = boatLength;
+      } else {
+        maxValidRow = BOARD_SIZE - boatLength + 1;
+        maxValidColumn = BOARD_SIZE;
+        rowUpperIncrement = boatLength;
+        columnUpperIncrement = 1;
+      }
       row = random(0, maxValidRow);
       column = random(0, maxValidColumn);
       isWaterAround = checkValidCoordinate(board, row, column, rowLowerIncrement, rowUpperIncrement,
@@ -109,12 +115,17 @@ void loop() {
       board2[i][j] = WATER;
     }
   }
-  setBoats(board, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH, VERTICAL, -1, 1, -1, 1);
-  setBoats(board, NUM_DESTROYER, DESTROYER_LENGTH, HORIZONTAL, -1, 1, -1, 3);
-  setBoats(board, 2, BATTLESHIP_LENGTH, VERTICAL, -1, 4, -1, 1);
+  setBoats(board, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
+  setBoats(board, NUM_CRUISE, CRUISE_LENGTH);
+  setBoats(board, NUM_DESTROYER, DESTROYER_LENGTH);
+  setBoats(board, NUM_BATTLESHIP, BATTLESHIP_LENGTH);
+  setBoats(board2, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
+  setBoats(board2, NUM_CRUISE, CRUISE_LENGTH);
+  setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH);
+  setBoats(board2, NUM_BATTLESHIP, BATTLESHIP_LENGTH);
   showBoard(board);
-  //Serial.println();
-  //showBoard(board2);
+  Serial.println();
+  showBoard(board2);
   Serial.println("-------------------");
   delay(5000);
 }
