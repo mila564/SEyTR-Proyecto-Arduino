@@ -1,3 +1,4 @@
+#include <MCUFRIEND_kbv.h>
 #include <Adafruit_TFTLCD.h>  //Librería para visualización
 #include <TouchScreen.h> // Librería del panel táctil
 
@@ -23,7 +24,7 @@
 
 //------------------------
 
-#define CONTROLLER "ILI9486"
+#define CONTROLLER 0x9486
 
 // States
 
@@ -36,7 +37,7 @@
 //Colors
 
 #define BLUE 0x186EDE //MISS
-#define RED 0xED2415 //IMPACT
+#define RED 0xF800 //IMPACT 0xED2415
 #define BLACK 0x000000 //SUNK
 #define WHITE 0xFFFFFF// BACKGROUND
 
@@ -71,14 +72,11 @@ int BOXSIZE = 40;
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
 
-Adafruit_TFTLCD screenDisplay; // LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET
+MCUFRIEND_kbv screenDisplay(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET); 
 TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300); 
 
-void drawGrid(Adafruit_TFTLCD screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT][BOARD_WIDTH]){
-  screenDisplay.setRotation(1); //Display en LANDSCAPE
-
+void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT][BOARD_WIDTH]){
   screenDisplay.fillScreen(WHITE);
-  
   for (int i = 0; i < BOARD_HEIGHT; i++){
     for (int j = 0; j < BOARD_WIDTH; j++){
       screenDisplay.drawRect(j*BOXSIZE, i*BOXSIZE, BOXSIZE, BOXSIZE, BLACK);
@@ -186,10 +184,13 @@ void showBoard(int board [BOARD_HEIGHT][BOARD_WIDTH]){
 
 void setup() {
   Serial.begin(9600);
+  screenDisplay.reset();
   randomSeed(analogRead(A0));
   pinMode(13, OUTPUT);
   //Inicializar pantalla 
-  screenDisplay.begin(CONTROLLER); 
+  screenDisplay.begin(CONTROLLER);
+  screenDisplay.setRotation(1); //Display en LANDSCAPE
+  screenDisplay.fillScreen(RED);
 }
 
 void loop() {
@@ -208,12 +209,13 @@ void loop() {
   setBoats(board2, NUM_CRUISE, CRUISE_LENGTH);
   setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH);
   setBoats(board2, NUM_BATTLESHIP, BATTLESHIP_LENGTH);*/
+  board[0][0] = IMPACT;
   //showBoard(board);
   drawGrid(screenDisplay, BOXSIZE, board);
   //Serial.println();
   //showBoard(board2);
   //Serial.println("-------------------");
-  delay(20000);
+  delay(5000);
 }
 
 /*
