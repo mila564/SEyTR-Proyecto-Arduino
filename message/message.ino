@@ -71,7 +71,7 @@ int BOXSIZE = 40;
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
 
-Adafruit_TFTLCD screenDisplay(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
+Adafruit_TFTLCD screenDisplay; // LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET
 TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300); 
 
 void drawGrid(Adafruit_TFTLCD screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT][BOARD_WIDTH]){
