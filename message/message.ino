@@ -1,16 +1,22 @@
 #include <MCUFRIEND_kbv.h>
+#include <Adafruit_GFX.h>
 #include <Adafruit_TFTLCD.h>  //Librería para visualización
 #include <TouchScreen.h> // Librería del panel táctil
+
+#if defined(__SAM3X8E__)
+    #undef __FlashStringHelper::F(string_literal)
+    #define F(string_literal) string_literal
+#endif
 
 #define XM A2
 #define XP 6
 #define YP A1
 #define YM 7
 
-#define TS_MINX 905
-#define TS_MAXX 130
-#define TS_MINY 75
-#define TS_MAXY 930
+#define TS_MINX 150//905
+#define TS_MAXX 920//130
+#define TS_MINY 120//75
+#define TS_MAXY 940//930
 
 // Touch screen pins
 #define LCD_CS  A3
@@ -18,9 +24,6 @@
 #define LCD_WR  A1
 #define LCD_RD  A0
 #define LCD_RESET  A4
-
-#define TS_MIN_X_Y 0
-#define TS_MAX_X_Y 1023
 
 //------------------------
 
@@ -48,14 +51,14 @@
 
 //Pressure
 
-#define MINPRESSURE 120
-#define MAXPRESSURE 220
+#define MINPRESSURE 10
+#define MAXPRESSURE 1000
 
 int BOXSIZE = 40;
 
-#define NUM_PATROL_BOATS 3
-#define NUM_CRUISE 2
-#define NUM_DESTROYER 1
+#define NUM_PATROL_BOATS 4
+#define NUM_CRUISE 3
+#define NUM_DESTROYER 2
 #define NUM_BATTLESHIP 1
 
 #define PATROL_BOAT_LENGTH 1
@@ -72,7 +75,7 @@ int BOXSIZE = 40;
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
 
-MCUFRIEND_kbv screenDisplay(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET); 
+MCUFRIEND_kbv screenDisplay;//(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET); 
 TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300); 
 
 void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT][BOARD_WIDTH]){
@@ -97,17 +100,29 @@ void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT]
 
 void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay  ){
   int row, column;
+  boolean isSunk;
+  pinMode(13, OUTPUT);
   while(1){
     //Enable touch panel
     digitalWrite(13, HIGH);
     TSPoint p = touchPanel.getPoint();
+    delay(100);
+    p = touchPanel.getPoint();
+    delay(100);
     //Disable tocuh panel
     digitalWrite(13, LOW);
     //mirárselo
     pinMode(XM, OUTPUT);
     pinMode(YP, OUTPUT);
-    p.x = map(TS_MAX_X_Y - p.x, TS_MAX_X_Y, TS_MIN_X_Y, screenDisplay.width(), 0);
-    p.y = map(TS_MAX_X_Y - p.y, TS_MAX_X_Y, TS_MIN_X_Y, screenDisplay.height(), 0);
+    p.x = p.x + p.y;       
+    p.y = p.x - p.y;            
+    p.x = p.x - p.y;
+    //p.x = map (TS_MAXX - p.x, TS_MAXX, TS_MINX, 0, screenDisplay.width());
+    //p.x = map(p.x, TS_MINX, TS_MAXX, screenDisplay.width(), 0);
+    //p.y = map (TS_MAXY - p.y, TS_MAXY, TS_MINY, 0, screenDisplay.height());
+    //p.y = (screenDisplay.height() - map(p.y, TS_MINY, TS_MAXY, screenDisplay.height(), 0));
+    p.x = map(p.x, TS_MINX, TS_MAXX, screenDisplay.width(), 0);
+    p.y = (screenDisplay.height() - map(p.y, TS_MINY, TS_MAXY, screenDisplay.height(), 0));
     if(p.z >= MINPRESSURE && p.z <= MAXPRESSURE){//Update
       row = p.y/BOXSIZE;
       column= p.x/BOXSIZE;
@@ -117,7 +132,14 @@ void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRI
            board[row][column] = MISS;
            break;
         case BOAT:
-          ///METODO PARA COMPROBAR SI SE HA HUNDIDO
+          isSunk = checkIfBoatIsSunk(row, column, board);
+          if(isSunk){
+            board[row][column] = SUNK;
+            setBoatSunk(row, column, board);
+          }
+          else{
+            board[row][column] = IMPACT;
+          }
            break;
         default:
            continue;
@@ -126,11 +148,11 @@ void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRI
     }
   }
 }
-boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
+boolean checkIfBoatIsSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
   int rowAux = row;
   int columnAux = column;
   //bucle hacia arriba
-  while(rowAux >= 0 && board[rowAux][columnAux] != WATER){
+  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
@@ -140,7 +162,7 @@ boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
   rowAux = row;
   columnAux = column;
   //bucle hacia la izquierda
-  while(columnAux >= 0 && board[rowAux][columnAux] != WATER){
+  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
@@ -150,7 +172,7 @@ boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
   rowAux = row;
   columnAux = column;
   //bucle hacia abajo
-  while(rowAux < BOARD_HEIGHT && board[rowAux][columnAux] != WATER){
+  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
@@ -160,7 +182,7 @@ boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
   rowAux = row;
   columnAux = column;
   //bucle hacia la derecha
-  while(columnAux < BOARD_WIDTH && board[rowAux][columnAux] != WATER){
+  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
@@ -168,6 +190,42 @@ boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
   }
   return true;
 }
+
+void setBoatSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
+  int rowAux = row;
+  int columnAux = column;
+  //bucle hacia arriba
+  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+    board[rowAux][columnAux] = SUNK;
+    rowAux--;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia la izquierda
+  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+    board[rowAux][columnAux] = SUNK;
+    columnAux--;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia abajo
+  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+    board[rowAux][columnAux] = SUNK;
+    rowAux++;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia la derecha
+  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+    board[rowAux][columnAux] = SUNK;
+    columnAux++;
+  }
+  return true;
+}
+
 
 boolean checkValidCoordinate(
   int board [BOARD_HEIGHT][BOARD_WIDTH], int row, int column, int rowLowerIncrement,
@@ -236,15 +294,10 @@ void setup() {
   Serial.begin(9600);
   screenDisplay.reset();
   randomSeed(analogRead(A0));
-  pinMode(13, OUTPUT);
   //Inicializar pantalla 
   screenDisplay.begin(CONTROLLER);
   screenDisplay.setRotation(1); //Display en LANDSCAPE
-  screenDisplay.fillScreen(RED);
-}
-
-void loop() {
-  // iniciar todas las casillas a agua
+    // iniciar todas las casillas a agua
   for (int i = 0; i < BOARD_HEIGHT; i++) {
     for (int j = 0; j < BOARD_WIDTH; j++) {
       board[i][j] = WATER;
@@ -255,17 +308,16 @@ void loop() {
   setBoats(board, NUM_CRUISE, CRUISE_LENGTH);
   setBoats(board, NUM_DESTROYER, DESTROYER_LENGTH);
   setBoats(board, NUM_BATTLESHIP, BATTLESHIP_LENGTH);
-  /*setBoats(board2, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
+    /*setBoats(board2, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
   setBoats(board2, NUM_CRUISE, CRUISE_LENGTH);
   setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH);
   setBoats(board2, NUM_BATTLESHIP, BATTLESHIP_LENGTH);*/
-  board[0][0] = IMPACT;
-  //showBoard(board);
+  //pinMode(13, OUTPUT);
+}
+
+void loop() {
   drawGrid(screenDisplay, BOXSIZE, board);
-  //Serial.println();
-  //showBoard(board2);
-  //Serial.println("-------------------");
-  delay(5000);
+  shoot(board, touchPanel, screenDisplay);
 }
 
 /*
