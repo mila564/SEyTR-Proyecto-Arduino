@@ -95,28 +95,78 @@ void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT]
   }
 }
 
-void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, Adafruit_TFTLCD screenDisplay  ){
-  int indexX, indexY;
+void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay  ){
+  int row, column;
   while(1){
+    //Enable touch panel
     digitalWrite(13, HIGH);
     TSPoint p = touchPanel.getPoint();
+    //Disable tocuh panel
     digitalWrite(13, LOW);
+    //mirárselo
     pinMode(XM, OUTPUT);
     pinMode(YP, OUTPUT);
     p.x = map(TS_MAX_X_Y - p.x, TS_MAX_X_Y, TS_MIN_X_Y, screenDisplay.width(), 0);
     p.y = map(TS_MAX_X_Y - p.y, TS_MAX_X_Y, TS_MIN_X_Y, screenDisplay.height(), 0);
     if(p.z >= MINPRESSURE && p.z <= MAXPRESSURE){//Update
-      indexX = p.x/BOXSIZE;
-      indexY = p.y/BOXSIZE;
-      if(board[indexX][indexY]==WATER){
-        board[indexX][indexY] = MISS;
-      }
-      else{
-        
+      row = p.y/BOXSIZE;
+      column= p.x/BOXSIZE;
+      
+      switch(board[row][column]){
+        case WATER:
+           board[row][column] = MISS;
+           break;
+        case BOAT:
+          ///METODO PARA COMPROBAR SI SE HA HUNDIDO
+           break;
+        default:
+           continue;
       }
       break;
     }
   }
+}
+boolean checkIfBoatIsSunk(int row, int column, int board[B_H][B_W]){
+  int rowAux = row;
+  int columnAux = column;
+  //bucle hacia arriba
+  while(rowAux >= 0 && board[rowAux][columnAux] != WATER){
+    if(board[rowAux][columnAux] == BOAT){
+      return false;
+    }
+    rowAux--;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia la izquierda
+  while(columnAux >= 0 && board[rowAux][columnAux] != WATER){
+    if(board[rowAux][columnAux] == BOAT){
+      return false;
+    }
+    columnAux--;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia abajo
+  while(rowAux < BOARD_HEIGHT && board[rowAux][columnAux] != WATER){
+    if(board[rowAux][columnAux] == BOAT){
+      return false;
+    }
+    rowAux++;
+  }
+  //restart
+  rowAux = row;
+  columnAux = column;
+  //bucle hacia la derecha
+  while(columnAux < BOARD_WIDTH && board[rowAux][columnAux] != WATER){
+    if(board[rowAux][columnAux] == BOAT){
+      return false;
+    }
+    columnAux++;
+  }
+  return true;
 }
 
 boolean checkValidCoordinate(
@@ -224,11 +274,11 @@ void loop() {
  <-------------------------------------------->
  0   1   2   3   4   5   6   7   8   9   10  11
 [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 0   ^                        
-[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 1   |                        
-[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 2   |   display.height() = 320                     
-[0] [0] [0] [0] [4] [4] [4] [0] [0] [0] [0] [0] 3   |   i/row                    
-[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 4   |   ^                    
-[0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 5   |   | 
+[0] [0] [1] [3] [3] [3] [0] [0] [0] [0] [0] [0] 1   |                        
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [1] [0] [0] 2   |   display.height() = 320                     
+[0] [0] [0] [0] [0] [0] [4] [0] [0] [3] [0] [0] 3   |   i/row                    
+[0] [0] [0] [0] [0] [0] [0] [0] [0] [1] [0] [0] 4   |   ^                    
+[0] [3] [1] [3] [0] [0] [0] [0] [0] [0] [0] [0] 5   |   | 
 [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 6   |
 [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] [0] 7   v                        
 board[row][column]
