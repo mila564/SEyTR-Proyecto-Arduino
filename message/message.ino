@@ -8,17 +8,18 @@
     #define F(string_literal) string_literal
 #endif
 
+// Touch screen pins
 #define XM A2
 #define XP 6
 #define YP A1
 #define YM 7
 
-#define TS_MINX 150//905
-#define TS_MAXX 920//130
-#define TS_MINY 120//75
-#define TS_MAXY 940//930
+#define TS_MINX 150
+#define TS_MAXX 920
+#define TS_MINY 120
+#define TS_MAXY 940
 
-// Touch screen pins
+// Display screen pins
 #define LCD_CS  A3
 #define LCD_CD  A2
 #define LCD_WR  A1
@@ -40,11 +41,12 @@
 //Colors
 
 #define BLUE 0x186EDE //MISS
-#define RED 0xF800 //IMPACT 0xED2415
+#define RED 0xF800 //IMPACT 
 #define BLACK 0x000000 //SUNK
 #define WHITE 0xFFFFFF// BACKGROUND
-
-//#define BOARD_SIZE 10
+#define PURPLE 0x8D27C4 //BACKGROUND TURN
+#define LIME 0x9CDB27 // BACKGROUND TURN
+#define ORANGE 0xD67F0D
 
 #define BOARD_WIDTH 12
 #define BOARD_HEIGHT 8
@@ -66,14 +68,16 @@ int BOXSIZE = 40;
 #define DESTROYER_LENGTH 3
 #define BATTLESHIP_LENGTH 4
 
+#define NUM_TOTAL_BOATS 10
+
 #define HORIZONTAL 0
 #define VERTICAL 1
 
-//int board [BOARD_SIZE][BOARD_SIZE];
-//int board2 [BOARD_SIZE][BOARD_SIZE];
-
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
+
+int numBoatsPlayer1;
+int numBoatsPlayer2;
 
 MCUFRIEND_kbv screenDisplay;//(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET); 
 TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300); 
@@ -94,11 +98,40 @@ void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT]
           screenDisplay.fillRect(j*BOXSIZE, i*BOXSIZE, BOXSIZE, BOXSIZE, BLACK);
         default: ;  
       }
+      screenDisplay.drawRect(j*BOXSIZE, i*BOXSIZE, BOXSIZE, BOXSIZE, BLACK);
+    }
+  }
+  delay(5000);
+}
+
+void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, String color){
+  int char_size = 10;
+  // Need to do this to rotate text
+  screenDisplay.setRotation(1);
+  screenDisplay.drawChar(screenDisplay.width() / 2, screenDisplay.height() / 2, turn, WHITE, color, char_size);
+  pinMode(13, OUTPUT);
+  while(1){
+    //Enable touch panel
+    digitalWrite(13, HIGH);
+    TSPoint p = touchPanel.getPoint();
+    delay(100);
+    p = touchPanel.getPoint();
+    delay(100);
+    //Disable tocuh panel
+    digitalWrite(13, LOW);
+    //mirárselo
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    p.x = p.x + p.y;       
+    p.y = p.x - p.y;            
+    p.x = p.x - p.y;
+    if(p.z >= MINPRESSURE){
+      break;
     }
   }
 }
 
-void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay  ){
+int shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay, int numBoatsPlayer){
   int row, column;
   boolean isSunk;
   pinMode(13, OUTPUT);
@@ -117,36 +150,37 @@ void shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRI
     p.x = p.x + p.y;       
     p.y = p.x - p.y;            
     p.x = p.x - p.y;
-    //p.x = map (TS_MAXX - p.x, TS_MAXX, TS_MINX, 0, screenDisplay.width());
-    //p.x = map(p.x, TS_MINX, TS_MAXX, screenDisplay.width(), 0);
-    //p.y = map (TS_MAXY - p.y, TS_MAXY, TS_MINY, 0, screenDisplay.height());
-    //p.y = (screenDisplay.height() - map(p.y, TS_MINY, TS_MAXY, screenDisplay.height(), 0));
     p.x = map(p.x, TS_MINX, TS_MAXX, screenDisplay.width(), 0);
     p.y = (screenDisplay.height() - map(p.y, TS_MINY, TS_MAXY, screenDisplay.height(), 0));
     if(p.z >= MINPRESSURE && p.z <= MAXPRESSURE){//Update
       row = p.y/BOXSIZE;
       column= p.x/BOXSIZE;
-      
       switch(board[row][column]){
         case WATER:
            board[row][column] = MISS;
            break;
         case BOAT:
+          board[row][column] = IMPACT;
           isSunk = checkIfBoatIsSunk(row, column, board);
           if(isSunk){
-            board[row][column] = SUNK;
             setBoatSunk(row, column, board);
           }
-          else{
-            board[row][column] = IMPACT;
-          }
-           break;
+          return numBoatsPlayer--;
         default:
            continue;
       }
-      break;
+      return numBoatsPlayer;
     }
   }
+}
+
+void win(MCUFRIEND_kbv screenDisplay, char player){
+  // Need to do this to rotate text
+  screenDisplay.setRotation(1);
+  screenDisplay.fillScreen(ORANGE);
+  screenDisplay.setCursor(180, 160);
+  tft.setTextSize(10);
+  screenDisplay.print("Player " + player + " wins!");
 }
 boolean checkIfBoatIsSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
   int rowAux = row;
@@ -304,20 +338,37 @@ void setup() {
       board2[i][j] = WATER;
     }
   }
+  //PLAYER 1
   setBoats(board, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
   setBoats(board, NUM_CRUISE, CRUISE_LENGTH);
   setBoats(board, NUM_DESTROYER, DESTROYER_LENGTH);
   setBoats(board, NUM_BATTLESHIP, BATTLESHIP_LENGTH);
-    /*setBoats(board2, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
+  //PLAYER 2
+  setBoats(board2, NUM_PATROL_BOATS, PATROL_BOAT_LENGTH);
   setBoats(board2, NUM_CRUISE, CRUISE_LENGTH);
   setBoats(board2, NUM_DESTROYER, DESTROYER_LENGTH);
-  setBoats(board2, NUM_BATTLESHIP, BATTLESHIP_LENGTH);*/
-  //pinMode(13, OUTPUT);
+  setBoats(board2, NUM_BATTLESHIP, BATTLESHIP_LENGTH);
+  numBoatsPlayer1 = NUM_TOTAL_BOATS;
+  numBoatsPlayer2 = NUM_TOTAL_BOATS;
 }
 
 void loop() {
+  drawNextTurnSlide(screenDisplay, '1', PURPLE, touchPanel);
   drawGrid(screenDisplay, BOXSIZE, board);
-  shoot(board, touchPanel, screenDisplay);
+  numBoatsPlayer1 = shoot(board, touchPanel, screenDisplay, numBoatsPlayer1);
+  drawGrid(screenDisplay, BOXSIZE, board);
+  if(numBoatsPlayer1 == 0){
+    win(screenDisplay, '1');
+    break;
+  }
+  drawNextTurnSlide(screenDisplay, '2', LIME, touchPanel);
+  drawGrid(screenDisplay, BOXSIZE, board2);
+  numBoatsPlayer2 = shoot(board2, touchPanel, screenDisplay, numBoatsPlayer2);
+  drawGrid(screenDisplay, BOXSIZE, board2);
+  if(numBoatsPlayer2 == 0){
+    win(screenDisplay, '2');
+    break;
+  }
 }
 
 /*
