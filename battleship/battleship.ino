@@ -101,13 +101,16 @@ void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT]
       screenDisplay.drawRect(j*BOXSIZE, i*BOXSIZE, BOXSIZE, BOXSIZE, BLACK);
     }
   }
-  delay(5000);
+  delay(500);
 }
 
-void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, String color){
+void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, int color, TouchScreen touchPanel){
   int char_size = 10;
   screenDisplay.setRotation(1);
-  screenDisplay.drawChar(screenDisplay.width() / 2, screenDisplay.height() / 2, turn, WHITE, color, char_size);
+  screenDisplay.fillScreen(color);
+  screenDisplay.setCursor(220,130);
+  screenDisplay.setTextSize(10);
+  screenDisplay.print(turn);
   pinMode(13, OUTPUT);
   while(1){
     digitalWrite(13, HIGH);
@@ -127,7 +130,7 @@ void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, String color){
   }
 }
 
-int shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay, int numBoatsPlayer){
+int shoot(int board[BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIEND_kbv screenDisplay, int numBoatsPlayer){
   int row, column;
   boolean isSunk;
   pinMode(13, OUTPUT);
@@ -154,11 +157,21 @@ int shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIE
            break;
         case BOAT:
           board[row][column] = IMPACT;
+          showBoard(board);
+          Serial.print("position ");
+            Serial.print(row);
+            Serial.print(" ");
+            Serial.print(column);
+            Serial.print(": ");
+            Serial.println(board[row][column]);
+            Serial.println("--------------------------------------");
           isSunk = checkIfBoatIsSunk(row, column, board);
           if(isSunk){
             setBoatSunk(row, column, board);
+            --numBoatsPlayer;
           }
-          return numBoatsPlayer--;
+          Serial.print("barcos que quedan: ");
+          Serial.println(numBoatsPlayer);
         default:
            continue;
       }
@@ -170,39 +183,45 @@ int shoot(int board [BOARD_HEIGHT][BOARD_WIDTH], TouchScreen touchPanel, MCUFRIE
 void win(MCUFRIEND_kbv screenDisplay, char player){
   screenDisplay.setRotation(1);
   screenDisplay.fillScreen(ORANGE);
-  screenDisplay.setCursor(180, 160);
-  tft.setTextSize(10);
-  screenDisplay.print("Player " + player + " wins!");
+  screenDisplay.setCursor(180,130);
+  screenDisplay.setTextSize(10);
+  screenDisplay.print("Player ");
+  screenDisplay.print(player);
+  screenDisplay.print(" wins!");
 }
 
 boolean checkIfBoatIsSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
   int rowAux = row;
   int columnAux = column;
-  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  //up
+  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
     rowAux--;
   }
+  //left
   rowAux = row;
   columnAux = column;
-  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
     columnAux--;
   }
+  //down
   rowAux = row;
   columnAux = column;
-  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
     rowAux++;
   }
+  //right
   rowAux = row;
   columnAux = column;
-  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     if(board[rowAux][columnAux] == BOAT){
       return false;
     }
@@ -214,25 +233,25 @@ boolean checkIfBoatIsSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WID
 void setBoatSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
   int rowAux = row;
   int columnAux = column;
-  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(rowAux >= 0 && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     board[rowAux][columnAux] = SUNK;
     rowAux--;
   }
   rowAux = row;
   columnAux = column;
-  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(columnAux >= 0 && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     board[rowAux][columnAux] = SUNK;
     columnAux--;
   }
   rowAux = row;
   columnAux = column;
-  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(rowAux < BOARD_HEIGHT && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     board[rowAux][columnAux] = SUNK;
     rowAux++;
   }
   rowAux = row;
   columnAux = column;
-  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER || board[rowAux][columnAux] != MISS)){
+  while(columnAux < BOARD_WIDTH && (board[rowAux][columnAux] != WATER && board[rowAux][columnAux] != MISS)){
     board[rowAux][columnAux] = SUNK;
     columnAux++;
   }
@@ -334,7 +353,7 @@ void loop() {
   drawGrid(screenDisplay, BOXSIZE, board);
   if(numBoatsPlayer1 == 0){
     win(screenDisplay, '1');
-    break;
+    while(1) {}
   }
   drawNextTurnSlide(screenDisplay, '2', LIME, touchPanel);
   drawGrid(screenDisplay, BOXSIZE, board2);
@@ -342,7 +361,7 @@ void loop() {
   drawGrid(screenDisplay, BOXSIZE, board2);
   if(numBoatsPlayer2 == 0){
     win(screenDisplay, '2');
-    break;
+    while(1) {}
   }
 }
 
