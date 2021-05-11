@@ -1,27 +1,18 @@
-#include <MCUFRIEND_kbv.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_TFTLCD.h>
-#include <TouchScreen.h>
+// Libraries
 
-// Touch screen
+#include <Adafruit_GFX.h>   // Graphic functions 
+#include <MCUFRIEND_kbv.h>  // Display
+#include <TouchScreen.h>    // Touch screen  
 
-#define XM A2
-#define XP 6
-#define YP A1
-#define YM 7
+//------------------------
 
-#define TS_MINX 127
-#define TS_MAXX 961
-#define TS_MINY 117
-#define TS_MAXY 921
+// Display 
 
-#define MINPRESSURE 10
-#define MAXPRESSURE 1000
+// Controller's model
 
-#define HORIZONTAL 0
-#define VERTICAL 1
+#define CONTROLLER 0x9486
 
-// Display screen
+// Pins
 
 #define LCD_CS  A3
 #define LCD_CD  A2
@@ -29,9 +20,32 @@
 #define LCD_RD  A0
 #define LCD_RESET  A4
 
-#define CONTROLLER 0x9486
+//------------------------
+
+// Touch screen
+
+// Pins
+
+#define XM A2
+#define XP 6
+#define YP A1
+#define YM 7
+
+// Maximum and minimum values read in touch screen
+
+#define TS_MINX 127
+#define TS_MAXX 961
+#define TS_MINY 117
+#define TS_MAXY 921
+
+// Pressure interval detected by touch screen
+
+#define MINPRESSURE 10
+#define MAXPRESSURE 1000
 
 //------------------------
+
+// Game
 
 // States
 
@@ -43,27 +57,27 @@
 
 // Colors
 
-#define BLUE 0x186EDE   // MISS
-#define RED 0xF800      // IMPACT 
-#define BLACK 0x000000  // SUNK
-#define WHITE 0xFFFFFF  // BACKGROUND
-#define PURPLE 0x8D27C4 // BACKGROUND TURN
-#define LIME 0x9CDB27   // BACKGROUND TURN
-#define ORANGE 0xD67F0D
+#define BLUE 0x186EDE   // Miss square
+#define RED 0xF800      // Impact square
+#define BLACK 0x000000  // Sunk square
+#define WHITE 0xFFFFFF  // Grid background
+#define LIME 0x9CDB27   // Player 1 background color
+#define PURPLE 0x8D27C4 // Player 2 background color
+#define ORANGE 0xD67F0D // Win background
 
-// Board sizes
+// Board dimensions
 
 #define BOARD_WIDTH 12
 #define BOARD_HEIGHT 8
 
 // Boat's number
 
+#define NUM_TOTAL_BOATS 10
+
 #define NUM_PATROL_BOATS 4
 #define NUM_CRUISE 3
 #define NUM_DESTROYER 2
 #define NUM_BATTLESHIP 1
-
-#define NUM_TOTAL_BOATS 10
 
 // Boat's length
 
@@ -72,7 +86,12 @@
 #define DESTROYER_LENGTH 3
 #define BATTLESHIP_LENGTH 4
 
-int BOXSIZE = 40;
+// Boat's orientation
+
+#define HORIZONTAL 0
+#define VERTICAL 1
+
+int BOXSIZE = 40; // Size of board squares in pixels
 
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
@@ -80,8 +99,8 @@ int board2 [BOARD_HEIGHT][BOARD_WIDTH];
 int numBoatsPlayer1;
 int numBoatsPlayer2;
 
-MCUFRIEND_kbv screenDisplay;
-TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300);
+MCUFRIEND_kbv screenDisplay;  
+TouchScreen touchPanel = TouchScreen(XP, YP, XM, YM, 300);  
 
 void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT][BOARD_WIDTH]){
   screenDisplay.fillScreen(WHITE);
