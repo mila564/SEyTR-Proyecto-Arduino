@@ -330,7 +330,6 @@ void setBoats(int board [BOARD_HEIGHT][BOARD_WIDTH], int numBoats, int boatLengt
 }
 
 void setup() {
-  Serial.begin(9600);
   screenDisplay.reset();
   randomSeed(analogRead(A0));
   screenDisplay.begin(CONTROLLER);
