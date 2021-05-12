@@ -61,8 +61,8 @@
 #define RED 0xF800      // Impact square
 #define BLACK 0x000000  // Sunk square
 #define WHITE 0xFFFFFF  // Grid background
-#define LIME 0x9CDB27   // Player 1 background color
-#define PURPLE 0x8D27C4 // Player 2 background color
+#define PURPLE 0x8D27C4 // Player 1 background color
+#define LIME 0x9CDB27   // Player 2 background color
 #define ORANGE 0xD67F0D // Win background
 
 // Board dimensions
@@ -91,7 +91,7 @@
 #define HORIZONTAL 0
 #define VERTICAL 1
 
-int BOXSIZE = 40; // Size of board squares in pixels
+int BOXSIZE = 40; // Size of square in pixels
 
 int board [BOARD_HEIGHT][BOARD_WIDTH];
 int board2 [BOARD_HEIGHT][BOARD_WIDTH];
@@ -125,7 +125,6 @@ void drawGrid(MCUFRIEND_kbv screenDisplay, int BOXSIZE, int board [BOARD_HEIGHT]
 }
 
 void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, int color, TouchScreen touchPanel){
-  int char_size = 10;
   screenDisplay.setRotation(1);
   screenDisplay.fillScreen(color);
   screenDisplay.setCursor(220,130);
@@ -141,9 +140,6 @@ void drawNextTurnSlide(MCUFRIEND_kbv screenDisplay, char turn, int color, TouchS
     digitalWrite(13, LOW);
     pinMode(XM, OUTPUT);
     pinMode(YP, OUTPUT);
-    p.x = p.x + p.y;       
-    p.y = p.x - p.y;            
-    p.x = p.x - p.y;
     if(p.z >= MINPRESSURE){
       break;
     }
