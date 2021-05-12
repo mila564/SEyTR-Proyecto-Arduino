@@ -274,7 +274,6 @@ void setBoatSunk(int row, int column, int board[BOARD_HEIGHT][BOARD_WIDTH]){
     board[rowAux][columnAux] = SUNK;
     columnAux++;
   }
-  return true;
 }
 
 boolean checkValidCoordinate(
